@@ -78,7 +78,7 @@ int compile()
             compileCMD = new const char *[6] { "g++", "-std=c++11", file.c_str(), "-o", bin.c_str(), nullptr };
             break;
         }
-        execvp(compileCMD[0], (char* const*)compileCMD);
+        execvp(compileCMD[0], (char *const *)compileCMD);
     }
     int status = 0;
     waitpid(pid, &status, 0);
@@ -204,7 +204,7 @@ bool cmp(const char *s1, const char *s2)
         const bool s2T = i >= s2L ? true : (s2[i] == '\n' || s2[i] == ' ' || s2[i] == '\0');
         if (i < s1L && s1[i] == '\n' && s2T)
             continue;
-        if (i > s1L && s2T)
+        if (i >= s1L && s2T)
             continue;
         if (s1[i] != s2[i])
             return false;
@@ -259,10 +259,11 @@ RESULT grading()
             if (outEOF && userOutEOF)
                 break;
 
-            //cout << "out: " << out << '\n';
-            //cout << "userOut: " << userOut << '\n';
+            const bool cmpR = cmp(out, userOut);
+            if (cmpR)
+                break;
 
-            if ((outEOF || userOutEOF) || !cmp(out, userOut))
+            if (!cmpR || (outEOF || userOutEOF))
             {
                 gradingResult = RESULT::WA;
                 break;
@@ -301,7 +302,7 @@ JOJ
 int main(int argc, char *argv[])
 {
     // Init
-    if(argc != 4) 
+    if (argc != 4)
     {
         cout << "인자 오류" << '\n';
         exit(1);
