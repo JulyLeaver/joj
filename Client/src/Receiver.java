@@ -17,7 +17,7 @@ public class Receiver extends Thread {
             String cmd;
             while(true) {
                 cmd = dis.readUTF();
-                System.out.println(cmd);
+                System.out.println("Server: " + cmd);
             }
         } catch (Exception e) {
             System.out.println("서버와 연결이 끊어졌습니다.");

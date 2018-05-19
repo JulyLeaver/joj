@@ -22,7 +22,7 @@ public class Main {
             String[] cmdSplit;
             File sourceFile;
             while(true) {
-                System.out.print('>');
+//                System.out.print('>');
 
                 cmd = br.readLine();
                 cmdSplit = cmd.split(" ");
@@ -33,12 +33,12 @@ public class Main {
                     break;
                 }
                 else if(cmdSplit[0].equals("run")) { // ex: "run test.c 1000"
-
-                    sourceFile = new File(cmdSplit[1]);
                     if (cmdSplit.length != 3) {
                         System.out.println("run 명령어 인자 오류");
                         continue;
                     }
+
+                    sourceFile = new File(cmdSplit[1]);
                     if (!sourceFile.exists()) {
                         System.out.println('\"' + System.getProperty("user.dir") + '\"' + " 경로에 " + '\"' + cmdSplit[1] + '\"' + "파일이 존재하지 않습니다.");
                         continue;

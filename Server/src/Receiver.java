@@ -1,6 +1,5 @@
 import java.io.*;
 import java.net.Socket;
-import java.util.Locale;
 import java.util.Map;
 
 public class Receiver extends Thread {
@@ -51,13 +50,13 @@ public class Receiver extends Thread {
                     final String PROBLEM_NUMBER = cmdSplit[2];
 
                     if(!(new File("../Problems/" + PROBLEM_NUMBER).isDirectory())) {
-                        dos.writeUTF( PROBLEM_NUMBER + "번 문제가 존재 하지 않습니다.");
                         Msg.msgHelper(Msg.log(LOCAL_ADDRESS,PROBLEM_NUMBER + "번 문제가 존재 하지 않습니다."));
+                        dos.writeUTF( PROBLEM_NUMBER + "번 문제가 존재 하지 않습니다.");
                         continue;
                     }
 
                     Msg.msgHelper(Msg.log(LOCAL_ADDRESS, PROBLEM_NUMBER + "번 문제 채점 시작"));
-                    ProcessBuilder pb = new ProcessBuilder("./Run",
+                    ProcessBuilder pb = new ProcessBuilder("./Run64",
                             LOCAL_ADDRESS,
                             FILE_NAME,
                             PROBLEM_NUMBER
