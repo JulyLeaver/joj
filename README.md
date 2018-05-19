@@ -1,2 +1,0 @@
-# JOJ
-Jinho Online Judge
