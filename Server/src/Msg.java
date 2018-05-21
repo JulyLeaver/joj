@@ -3,13 +3,13 @@ import java.util.Calendar;
 
 public class Msg {
     private static BufferedWriter bw = null;
-    private static Calendar cal = Calendar.getInstance();
 
     public static void setLogFileStream(BufferedWriter bw) {
         Msg.bw = bw;
     }
 
     public static String getLocalTime() {
+        Calendar cal = Calendar.getInstance();
         return new String(Integer.toString(cal.get(Calendar.YEAR)) + "Y-" +
                 Integer.toString(cal.get(Calendar.MONTH)) + "M-" +
                 Integer.toString(cal.get(Calendar.DAY_OF_MONTH)) + "D-" +

@@ -3,7 +3,7 @@ import java.net.Socket;
 
 public class Main {
     public static void main(String[] args) {
-        if(args.length != 1) {
+        if (args.length != 1) {
             System.out.println("실행 인자 오류");
             return;
         }
@@ -21,18 +21,16 @@ public class Main {
             String cmd;
             String[] cmdSplit;
             File sourceFile;
-            while(true) {
+            while (true) {
 //                System.out.print('>');
 
                 cmd = br.readLine();
                 cmdSplit = cmd.split(" ");
 
-                dos.writeUTF(cmd);
-
-                if(cmdSplit[0].equals("exit")) {
+                if (cmdSplit[0].equals("exit")) {
+                    dos.writeUTF(cmd);
                     break;
-                }
-                else if(cmdSplit[0].equals("run")) { // ex: "run test.c 1000"
+                } else if (cmdSplit[0].equals("run")) { // ex: "run test.c 1000"
                     if (cmdSplit.length != 3) {
                         System.out.println("run 명령어 인자 오류");
                         continue;
@@ -43,19 +41,24 @@ public class Main {
                         System.out.println('\"' + System.getProperty("user.dir") + '\"' + " 경로에 " + '\"' + cmdSplit[1] + '\"' + "파일이 존재하지 않습니다.");
                         continue;
                     }
+
+                    dos.writeUTF(cmd);
+
                     FileInputStream fis = new FileInputStream(sourceFile);
                     byte[] buf = new byte[2048];
                     int len = 0;
-                    while(fis.read(buf) != -1) {
+                    while (fis.read(buf) != -1) {
                         ++len;
                     }
                     fis.close();
                     dos.writeInt(len);
                     fis = new FileInputStream(sourceFile);
-                    while((len = fis.read(buf)) != -1) {
+                    while ((len = fis.read(buf)) != -1) {
                         os.write(buf, 0, len);
                     }
                     fis.close();
+                } else {
+                    dos.writeUTF(cmd);
                 }
             }
             dos.close();

@@ -263,7 +263,7 @@ RESULT grading()
             if (cmpR)
                 break;
 
-            if (!cmpR || (outEOF || userOutEOF))
+            if (!cmpR || outEOF || userOutEOF)
             {
                 gradingResult = RESULT::WA;
                 break;
@@ -305,7 +305,7 @@ int main(int argc, char *argv[])
     if (argc != 4)
     {
         cout << "인자 오류" << '\n';
-        exit(1);
+        exit(0);
     }
     user_id = argv[1];
     userFileName = argv[2];
@@ -313,7 +313,7 @@ int main(int argc, char *argv[])
     lang = (userFileName.back() == 'c' || userFileName.back() == 'C') ? LANG::C : LANG::CPP11;
 
     // 서버 프로그램에서 user_id로 된 폴더를 만들어 놓을 것, 또한 소스 파일도 user_id로 된 폴더 안에 있어야 한다.
-    //if(access(user_id.c_str(), R_OK | W_OK) == -1 && mkdir(user_id.c_str(), 0777) == -1) exit(1);
+    //if(access(user_id.c_str(), R_OK | W_OK) == -1 && mkdir(user_id.c_str(), 0777) == -1) exit(0);
 
     /*
     cout << "user_id: " << user_id << endl;
@@ -328,7 +328,7 @@ int main(int argc, char *argv[])
     if (compile())
     {
         cout << "compile error" << '\n';
-        exit(1);
+        exit(0);
     }
     else
         cout << "compile success" << '\n';
@@ -338,11 +338,13 @@ int main(int argc, char *argv[])
     // Grading
     RESULT gradingResult = grading();
     string resultS;
+    int r = 0;
     switch (gradingResult)
     {
     case RESULT::AC:
         resultS = "맞았습니다.";
-        break;
+        r = 1;
+	break;
     case RESULT::WA:
         resultS = "틀렸습니다.";
         break;
@@ -360,5 +362,5 @@ int main(int argc, char *argv[])
 
     // Destroy
 
-    return 0;
+    return r;
 }
