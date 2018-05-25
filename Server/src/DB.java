@@ -28,7 +28,7 @@ public class DB {
     private DB() {
         try {
             Class.forName("org.sqlite.JDBC");
-            connection = DriverManager.getConnection("jdbc:sqlite:System.db");
+            connection = DriverManager.getConnection("jdbc:sqlite:" + Msg.getLocalTime() + "-System.db");
             sm = connection.createStatement();
         } catch (Exception e) {
             e.printStackTrace();

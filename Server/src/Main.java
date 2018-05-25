@@ -11,7 +11,7 @@ public class Main {
         db.initTable();
 
         final int PORT = 1851;
-        System.out.println("JOJ Open");
+        System.out.println("JOJ");
         System.out.println("PORT: " + PORT);
 
         Map<String, Socket> sockets = new HashMap<>();
@@ -20,6 +20,8 @@ public class Main {
             Msg.setLogFileStream(bw);
 
             ServerSocket serverSocket = new ServerSocket(PORT);
+            Msg.msgHelper(Msg.getLocalTime() + " : SERVER OPEN");
+
             while (true) {
                 Socket socket = serverSocket.accept();
                 final String LOCAL_ADDRESS = socket.getInetAddress().getHostAddress();
