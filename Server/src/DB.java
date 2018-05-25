@@ -1,7 +1,5 @@
 import java.io.File;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -38,6 +36,9 @@ public class DB {
     }
 
     public void initTable() {
+        executeUpdate("DROP TABLE IF EXISTS STATUS");
+        executeUpdate("DROP TABLE IF EXISTS GRADING");
+
         StringBuilder s = new StringBuilder(128);
 
         s.append("CREATE TABLE STATUS(");
@@ -60,7 +61,6 @@ public class DB {
         for (int i = 0; i < problemFolders.size(); ++i) {
             executeUpdate("INSERT INTO STATUS(PROBLEM_ID) VALUES(" + problemFolders.get(i) + ")");
         }
-
         s = new StringBuilder(128);
         s.append("CREATE TABLE GRADING(");
         s.append("USER_ID VARCHAR2(15) NOT NULL UNIQUE, ");
@@ -76,7 +76,19 @@ public class DB {
         synchronized (instance) {
             try {
                 r = sm.executeUpdate(s);
-            } catch (Exception e) {
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        return r;
+    }
+
+    public ResultSet executeQuery(String s) {
+        ResultSet r = null;
+        synchronized (instance) {
+            try {
+                r = sm.executeQuery(s);
+            } catch (SQLException e) {
                 e.printStackTrace();
             }
         }

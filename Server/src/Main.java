@@ -1,6 +1,7 @@
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.sql.ResultSet;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,12 +33,15 @@ public class Main {
 
                 sockets.put(LOCAL_ADDRESS, socket);
                 new File(LOCAL_ADDRESS).mkdir();
-                DB.getInstance().executeUpdate("INSERT INTO GRADING(USER_ID) VALUES('" + LOCAL_ADDRESS + "')");
 
+                ResultSet rs = DB.getInstance().executeQuery("SELECT NOT EXISTS (SELECT * FROM GRADING WHERE USER_ID = '" + LOCAL_ADDRESS + "')");
+                rs.next();
+                if (rs.getBoolean(1)) {
+                    DB.getInstance().executeUpdate("INSERT INTO GRADING(USER_ID) VALUES('" + LOCAL_ADDRESS + "')");
+                }
                 new Receiver(sockets, socket, LOCAL_ADDRESS).start();
             }
         } catch (Exception e) {
-            System.out.println(e.getMessage());
             e.printStackTrace();
         }
     }

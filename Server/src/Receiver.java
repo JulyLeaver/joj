@@ -14,12 +14,21 @@ public class Receiver extends Thread {
         this.socket = socket;
     }
 
+    private void fileReadHelper(final String path, DataOutputStream dos) throws IOException {
+        BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(path)));
+        String s;
+        while ((s = br.readLine()) != null) {
+            dos.writeUTF(s);
+            Msg.msgHelper(Msg.log(LOCAL_ADDRESS, s));
+        }
+        br.close();
+    }
+
     @Override
     public void run() {
         super.run();
         try {
-            InputStream is = socket.getInputStream();
-            DataInputStream dis = new DataInputStream(is);
+            DataInputStream dis = new DataInputStream(socket.getInputStream());
             DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
 
             String cmd;
@@ -39,8 +48,8 @@ public class Receiver extends Thread {
                     FileOutputStream fos = new FileOutputStream(LOCAL_ADDRESS + '/' + cmdSplit[1]);
                     byte[] buf = new byte[2048];
                     int len = dis.readInt();
-                    for (int i = 0; i < len; ++i) {
-                        int bufS = is.read(buf);
+                    for (int i = 0; i < len; ++i) { // 음수 체크 안된다... 클라 소켓이 close 되지 않아서..? ㅇㅇ
+                        int bufS = dis.read(buf);
                         fos.write(buf, 0, bufS);
                     }
                     fos.close();
@@ -51,6 +60,7 @@ public class Receiver extends Thread {
                     if (!(new File("../Problems/" + PROBLEM_NUMBER).isDirectory())) {
                         Msg.msgHelper(Msg.log(LOCAL_ADDRESS, PROBLEM_NUMBER + "번 문제가 존재 하지 않습니다."));
                         dos.writeUTF(PROBLEM_NUMBER + "번 문제가 존재 하지 않습니다.");
+                        dos.writeUTF("cmd_able");
                         continue;
                     }
 
@@ -61,6 +71,8 @@ public class Receiver extends Thread {
                             FILE_NAME,
                             PROBLEM_NUMBER
                     );
+//                    pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+//                    pb.redirectOutput(new File(LOCAL_ADDRESS + "/GradingResult.out"));
                     Process p = null;
                     try {
                         p = pb.start();
@@ -68,32 +80,48 @@ public class Receiver extends Thread {
                         e.printStackTrace();
                         System.exit(0);
                     }
-
-                    BufferedReader processBR = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                    String out;
-                    while ((out = processBR.readLine()) != null) {
-                        Msg.msgHelper(Msg.log(LOCAL_ADDRESS, out));
-                        dos.writeUTF(out);
-                    }
                     p.waitFor();
+
+                    /*
+                    BufferedReader processBR = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                    char[] cBuf = new char[2048];
+                    while ((len = processBR.read(cBuf)) != -1) {
+//                        Msg.msgHelper(Msg.log(LOCAL_ADDRESS, out));
+                        StringBuffer s = new StringBuffer();
+                        for (int i = 0; i < len; ++i) {
+                            s.append(cBuf[i]);
+                        }
+                        dos.writeUTF(s.toString());
+                    }
                     processBR.close();
+                    */
 
-                    Msg.msgHelper(Msg.log(LOCAL_ADDRESS, "Run64 출력(끝)"));
-
-                    String s = "UPDATE STATUS SET SUBMIT_COUNT = SUBMIT_COUNT + 1 " +
+                    String s;
+                    s = "UPDATE STATUS SET SUBMIT_COUNT = SUBMIT_COUNT + 1 " +
                             "WHERE PROBLEM_ID = " + PROBLEM_NUMBER;
                     DB.getInstance().executeUpdate(s);
 
-                    if (p.exitValue() == 1) { // 맞았습니다.
+                    final int exitValue = p.exitValue();
+                    if (exitValue == 126) { // ./Run64 인자 에러
+                        Msg.msgHelper(Msg.getLocalTime() + " : ./Run64 인자 에러 발생, 종료");
+                        System.exit(0);
+                    } else if (exitValue == 1) { // 컴파일 에러
+                        fileReadHelper(LOCAL_ADDRESS + "/compileStderr.out", dos);
+                    } else if (exitValue == 0) { // AC
                         s = "UPDATE GRADING SET P" + PROBLEM_NUMBER + " = 'Y' " +
                                 "WHERE USER_ID = '" + LOCAL_ADDRESS + '\'';
                         DB.getInstance().executeUpdate(s);
+                    } else {
                     }
+                    fileReadHelper(LOCAL_ADDRESS + "/runStdout.out", dos);
+                    Msg.msgHelper(Msg.log(LOCAL_ADDRESS, "Run64 출력(끝)"));
                 }
+                dos.writeUTF("cmd_able");
             }
             dis.close();
+            dos.close();
             socket.close();
-        } catch (IOException e) { // EOFException -> IOException
+        } catch (IOException e) {
             Msg.msgHelper(Msg.log(LOCAL_ADDRESS, "연결이 끊겼습니다."));
         } catch (Exception e) {
             e.printStackTrace();

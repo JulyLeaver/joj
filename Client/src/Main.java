@@ -2,29 +2,40 @@ import java.io.*;
 import java.net.Socket;
 
 public class Main {
+    public static boolean cmd_able = true;
+
     public static void main(String[] args) {
         if (args.length != 1) {
             System.out.println("실행 인자 오류");
             return;
         }
+
         final String IP = args[0];
         final int PORT = 1851;
         try {
             Socket socket = new Socket(IP, PORT);
-
             new Receiver(socket).start();
 
-            OutputStream os = socket.getOutputStream();
-            DataOutputStream dos = new DataOutputStream(os);
+            DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
             BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
             String cmd;
             String[] cmdSplit;
             File sourceFile;
             while (true) {
-//                System.out.print('>');
-
                 cmd = br.readLine();
+
+//                if((new Random()).nextInt(2) == 1) {
+//                    cmd = "run test.cpp 1000";
+//                } else {
+//                    cmd = "run test.cpp 1020";
+//                }
+
+                if (!cmd_able) { // 계속 이 쓰레드에 머물 수 있기 때문에... 하지만 올때 까지 기다린다 끝났어도 cmd_able 메시지가 올때까지... 뭐 감수 해야지...
+                    System.out.println("처리 중 입니다.");
+                    continue;
+                }
+
                 cmdSplit = cmd.split(" ");
 
                 if (cmdSplit[0].equals("exit")) {
@@ -42,6 +53,7 @@ public class Main {
                         continue;
                     }
 
+                    cmd_able = false;
                     dos.writeUTF(cmd);
 
                     FileInputStream fis = new FileInputStream(sourceFile);
@@ -51,21 +63,21 @@ public class Main {
                         ++len;
                     }
                     fis.close();
-                    dos.writeInt(len);
                     fis = new FileInputStream(sourceFile);
+                    dos.writeInt(len);
                     while ((len = fis.read(buf)) != -1) {
-                        os.write(buf, 0, len);
+                        dos.write(buf, 0, len);
                     }
                     fis.close();
                 } else {
-                    dos.writeUTF(cmd);
+                    System.out.println("존재하지 않는 명령어 입니다.");
                 }
             }
-            dos.close();
             br.close();
+            dos.close();
             socket.close();
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (IOException e) {
+            System.out.println("서버와 연결이 끊어졌습니다.");
         }
     }
 }
