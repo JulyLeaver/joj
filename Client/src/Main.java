@@ -2,7 +2,7 @@ import java.io.*;
 import java.net.Socket;
 
 public class Main {
-    public static boolean cmd_able = true;
+    public static boolean unlock = true;
 
     public static void main(String[] args) {
         if (args.length != 1) {
@@ -25,13 +25,7 @@ public class Main {
             while (true) {
                 cmd = br.readLine();
 
-//                if((new Random()).nextInt(2) == 1) {
-//                    cmd = "run test.cpp 1000";
-//                } else {
-//                    cmd = "run test.cpp 1020";
-//                }
-
-                if (!cmd_able) { // 계속 이 쓰레드에 머물 수 있기 때문에... 하지만 올때 까지 기다린다 끝났어도 cmd_able 메시지가 올때까지... 뭐 감수 해야지...
+                if (!unlock) {
                     System.out.println("처리 중 입니다.");
                     continue;
                 }
@@ -53,7 +47,7 @@ public class Main {
                         continue;
                     }
 
-                    cmd_able = false;
+                    unlock = false;
                     dos.writeUTF(cmd);
 
                     FileInputStream fis = new FileInputStream(sourceFile);
@@ -70,6 +64,7 @@ public class Main {
                     }
                     fis.close();
                 } else {
+                    dos.writeUTF(cmd);
                     System.out.println("존재하지 않는 명령어 입니다.");
                 }
             }

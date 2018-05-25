@@ -16,6 +16,12 @@ import java.util.Collections;
  * ...
  * */
 public class DB {
+    private static String DB_NAME = "System.db";
+
+    public static void setDB_NAME(final String DB_NAME) {
+        DB.DB_NAME = DB_NAME;
+    }
+
     private static DB instance = null;
 
     public static DB getInstance() {
@@ -28,16 +34,16 @@ public class DB {
     private DB() {
         try {
             Class.forName("org.sqlite.JDBC");
-            connection = DriverManager.getConnection("jdbc:sqlite:" + Msg.getLocalTime() + "-System.db");
+            connection = DriverManager.getConnection("jdbc:sqlite:" + DB_NAME);
             sm = connection.createStatement();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void initTable() {
-        executeUpdate("DROP TABLE IF EXISTS STATUS");
-        executeUpdate("DROP TABLE IF EXISTS GRADING");
+    public void init() {
+//        executeUpdate("DROP TABLE IF EXISTS STATUS");
+//        executeUpdate("DROP TABLE IF EXISTS GRADING");
 
         StringBuilder s = new StringBuilder(128);
 

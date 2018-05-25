@@ -7,20 +7,24 @@ import java.util.Map;
 
 public class Main {
     public static void main(String[] args) {
+        final String STIME = Msg.getLocalTime();
+
+        DB.setDB_NAME(STIME + "-System.db");
         DB db = DB.getInstance();
-        db.initTable();
+        db.init();
 
         final int PORT = 1851;
-        System.out.println("JOJ");
+        System.out.println(STIME);
+        System.out.println("JOJ OPEN");
         System.out.println("PORT: " + PORT);
 
         Map<String, Socket> sockets = new HashMap<>();
         try {
-            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("log.txt")));
+            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(STIME + "-log.txt")));
             Msg.setLogFileStream(bw);
+            Msg.msgHelper(STIME + " : SERVER OPEN");
 
             ServerSocket serverSocket = new ServerSocket(PORT);
-            Msg.msgHelper(Msg.getLocalTime() + " : SERVER OPEN");
 
             while (true) {
                 Socket socket = serverSocket.accept();

@@ -18,8 +18,8 @@ public class Receiver extends Thread {
             String cmd;
             while (true) {
                 cmd = dis.readUTF();
-                if (cmd.equals("cmd_able")) {
-                    Main.cmd_able = true;
+                if (cmd.equals("unlock")) {
+                    Main.unlock = true;
                     continue;
                 }
                 System.out.println("Server:" + cmd);
