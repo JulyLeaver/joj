@@ -1,5 +1,7 @@
 import java.io.*;
 import java.net.Socket;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.util.Map;
 
 public class Receiver extends Thread {
@@ -17,10 +19,11 @@ public class Receiver extends Thread {
     private void fileReadHelper(final String path, DataOutputStream dos) throws IOException {
         BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(path)));
         String s;
+        dos.writeUTF("------------------------------");
         while ((s = br.readLine()) != null) {
             dos.writeUTF(s);
-            Msg.msgHelper(Msg.log(LOCAL_ADDRESS, s));
         }
+        dos.writeUTF("------------------------------");
         br.close();
     }
 
@@ -60,10 +63,13 @@ public class Receiver extends Thread {
                     final String PROBLEM_NUMBER = cmdSplit[2];
 
                     if (!(new File("../Problems/" + PROBLEM_NUMBER).isDirectory())) {
-                        Msg.msgHelper(Msg.log(LOCAL_ADDRESS, PROBLEM_NUMBER + "번 문제가 존재 하지 않습니다."));
+                        Msg.msgHelper(Msg.log(LOCAL_ADDRESS, "존재 하지 않는 번호 " + PROBLEM_NUMBER + " 채점 시도"));
                         dos.writeUTF(PROBLEM_NUMBER + "번 문제가 존재 하지 않습니다.");
                         continue;
                     }
+
+                    Msg.msgHelper(Msg.log(LOCAL_ADDRESS, "채점 시작"));
+                    dos.writeUTF("채점 시작");
 
                     ProcessBuilder pb = new ProcessBuilder("./Run64",
                             LOCAL_ADDRESS,
@@ -85,23 +91,35 @@ public class Receiver extends Thread {
                     DB.getInstance().executeUpdate(s);
 
                     final int exitValue = p.exitValue();
-                    if (exitValue == 126) { // ./Run64 인자 에러
+                    if (exitValue == 126) { // Run64 인자 에러
                         Msg.msgHelper(Msg.getLocalTime() + " : ./Run64 인자 에러 발생, 종료");
                         System.exit(0);
+                    } else if (exitValue == 123) { // 컴파일 에러
+                        fileReadHelper(LOCAL_ADDRESS + "/compileStderr.out", dos);
+                        Msg.msgHelper(Msg.log(LOCAL_ADDRESS, "컴파일 에러"));
                     } else if (exitValue == 0) { // AC
                         s = "UPDATE GRADING SET P" + PROBLEM_NUMBER + " = 'Y' " +
                                 "WHERE USER_ID = '" + LOCAL_ADDRESS + '\'';
                         DB.getInstance().executeUpdate(s);
                     }
+                    fileReadHelper(LOCAL_ADDRESS + "/runStdout.out", dos);
 
-                    synchronized (this) {
-                        Msg.msgHelper(Msg.log(LOCAL_ADDRESS, "Run64 출력(시작)"));
-                        if (exitValue == 1) { // 컴파일 에러
-                            fileReadHelper(LOCAL_ADDRESS + "/compileStderr.out", dos);
-                        }
-                        fileReadHelper(LOCAL_ADDRESS + "/runStdout.out", dos);
-                        Msg.msgHelper(Msg.log(LOCAL_ADDRESS, "Run64 출력(끝)"));
+                    Msg.msgHelper(Msg.log(LOCAL_ADDRESS, "채점 끝"));
+                    dos.writeUTF("채점 끝");
+                } else if (cmdSplit[0].equals("status")) {
+                    Msg.msgHelper(Msg.log(LOCAL_ADDRESS, "현재 결과 요청"));
+
+                    ResultSet r = DB.getInstance().executeQuery(
+                            "SELECT * FROM GRADING WHERE USER_ID = '" + LOCAL_ADDRESS + "'");
+                    ResultSetMetaData rt = r.getMetaData();
+                    int c = r.getMetaData().getColumnCount();
+                    dos.writeUTF("------------------------------");
+                    for (int i = 2; i <= c; ++i) {
+                        dos.writeUTF(rt.getColumnName(i) + ": " + r.getString(i));
                     }
+                    dos.writeUTF("------------------------------");
+                } else {
+                    dos.writeUTF("존재하지 않는 명령어");
                 }
             }
             dis.close();

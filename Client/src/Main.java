@@ -2,7 +2,7 @@ import java.io.*;
 import java.net.Socket;
 
 public class Main {
-    public static boolean unlock = true;
+    public static boolean lock = false;
 
     public static void main(String[] args) {
         if (args.length != 1) {
@@ -14,6 +14,8 @@ public class Main {
         final int PORT = 1851;
         try {
             Socket socket = new Socket(IP, PORT);
+            System.out.println("연결 성공");
+
             new Receiver(socket).start();
 
             DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
@@ -24,13 +26,14 @@ public class Main {
             File sourceFile;
             while (true) {
                 cmd = br.readLine();
+                cmdSplit = cmd.split(" ");
 
-                if (!unlock) {
+                if (cmd.length() < 1 || cmdSplit.length < 1) continue;
+
+                if (lock) {
                     System.out.println("처리 중 입니다.");
                     continue;
                 }
-
-                cmdSplit = cmd.split(" ");
 
                 if (cmdSplit[0].equals("exit")) {
                     dos.writeUTF(cmd);
@@ -47,7 +50,7 @@ public class Main {
                         continue;
                     }
 
-                    unlock = false;
+                    lock = true;
                     dos.writeUTF(cmd);
 
                     FileInputStream fis = new FileInputStream(sourceFile);
@@ -64,8 +67,8 @@ public class Main {
                     }
                     fis.close();
                 } else {
+                    lock = true;
                     dos.writeUTF(cmd);
-                    System.out.println("존재하지 않는 명령어 입니다.");
                 }
             }
             br.close();

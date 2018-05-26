@@ -33,7 +33,7 @@
 using namespace std;
 
 enum class LANG { C, CPP11 };
-enum class RESULT { AC, WA, TLE, MLE, RTE, NONE };
+enum class RESULT { AC = 0, WA, TLE, MLE, RTE, NONE };
 
 const char* userBinFileName = "user.bin"; 
 const char* userOutFileName = "user.out";
@@ -266,16 +266,19 @@ argv[3] = problem number(ex: 1001)
 
 Main Exit Value
     126 = 인자 오류
-      1 = 컴파일 에러
+    123 = 컴파일 에러
       0 = AC
-    123 = 그 외
+      1 = WA
+      2 = TLE
+      3 = MLE
+      4 = RLE 
  */
 int main(int argc, char* argv[])
 {
     if (argc != 4)
     {
         cout << "인자 오류" << '\n';
-        exit(126);
+        return 126;
     }
 
     // Init
@@ -290,19 +293,17 @@ int main(int argc, char* argv[])
     if (compile())
     {
         fputs("Compile Error \n", fstdout);
-        return 1;
+        return 123;
     }
     else fputs("Compile Success \n\n", fstdout);
 
     // Grading
     RESULT gradingResult = grading();
     string resultS;
-    int r = 123;
     switch (gradingResult)
     {
     case RESULT::AC:
         resultS = "맞았습니다.";
-        r = 0;
         break;
     case RESULT::WA:
         resultS = "틀렸습니다.";
@@ -322,5 +323,5 @@ int main(int argc, char* argv[])
     // Destroy
     fclose(fstdout);
 
-    return r;
+    return static_cast<int>(gradingResult);
 }

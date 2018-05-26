@@ -19,10 +19,10 @@ public class Receiver extends Thread {
             while (true) {
                 cmd = dis.readUTF();
                 if (cmd.equals("unlock")) {
-                    Main.unlock = true;
+                    Main.lock = false;
                     continue;
                 }
-                System.out.println("Server:" + cmd);
+                System.out.println("Server: " + cmd);
             }
         } catch (IOException e) {
             System.out.println("서버와 연결이 끊어졌습니다.");
