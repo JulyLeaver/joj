@@ -34,6 +34,8 @@ public class Receiver extends Thread {
             DataInputStream dis = new DataInputStream(socket.getInputStream());
             DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
 
+            dos.writeUTF("JOJ");
+
             String cmd;
             String[] cmdSplit;
 
@@ -97,10 +99,24 @@ public class Receiver extends Thread {
                     } else if (exitValue == 123) { // 컴파일 에러
                         fileReadHelper(LOCAL_ADDRESS + "/compileStderr.out", dos);
                         Msg.msgHelper(Msg.log(LOCAL_ADDRESS, "컴파일 에러"));
-                    } else if (exitValue == 0) { // AC
-                        s = "UPDATE GRADING SET P" + PROBLEM_NUMBER + " = 'Y' " +
-                                "WHERE USER_ID = '" + LOCAL_ADDRESS + '\'';
-                        DB.getInstance().executeUpdate(s);
+                    } else if (exitValue == 128) { // AC, WA, TLE, MLE, RTE
+                        BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(LOCAL_ADDRESS + "/exitCode")));
+                        final int exitCode = Integer.parseInt(br.readLine());
+                        br.close();
+
+                        final int what = (exitCode & 0x00FF0000) >> 16; // AC = 0, WA, TLE, MLE, RTE
+                        if (what == 0 || what == 1) {
+                            if (what == 0) {
+                                s = "UPDATE GRADING SET P" + PROBLEM_NUMBER + " = 'Y' " +
+                                        "WHERE USER_ID = '" + LOCAL_ADDRESS + '\'';
+                                DB.getInstance().executeUpdate(s);
+                            }
+
+                            s = "UPDATE GRADING SET P" + PROBLEM_NUMBER + "S = " +
+                                    ((exitCode & 0x0000FF00) >> 8) + '.' + (exitCode & 0x000000FF) +
+                                    " WHERE USER_ID = '" + LOCAL_ADDRESS + '\'';
+                            DB.getInstance().executeUpdate(s);
+                        }
                     }
                     fileReadHelper(LOCAL_ADDRESS + "/runStdout.out", dos);
 

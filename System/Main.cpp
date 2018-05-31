@@ -12,6 +12,7 @@
     JINHO ONLIME JUDGE [RUN64]
     2018/05/08 ~ 2018/05/12(v1.0)
     2018/05/23 ~ 2018/05/24(v2.0)
+    2018/05/31 ~ 2018/05/31(v2.1)
  */
 
 #include <iostream>
@@ -32,8 +33,8 @@
 
 using namespace std;
 
-enum class LANG { C, CPP11 };
-enum class RESULT { AC = 0, WA, TLE, MLE, RTE, NONE };
+enum LANG { C, CPP11 };
+enum RESULT { AC = 0, WA, TLE, MLE, RTE, NONE };
 
 const char* userBinFileName = "user.bin"; 
 const char* userOutFileName = "user.out";
@@ -126,12 +127,8 @@ RESULT running(const string& problemPath, int tcNumber, int limitSecond, int lim
         rlim.rlim_cur = limitSecond;
         rlim.rlim_max = limitSecond;
         setrlimit(RLIMIT_CPU, &rlim);
-	/*
-	   getrlimit(RLIMIT_AS, &rlim);
-	   rlim.rlim_cur = limitMemory / 2 * 3;
-	   setrlimit(RLIMIT_AS, &rlim);
-	 */
-        ptrace(PTRACE_TRACEME, 0, nullptr, nullptr);
+        
+	ptrace(PTRACE_TRACEME, 0, nullptr, nullptr);
         execl(run.c_str(), run.c_str(), nullptr);
     }
     struct rusage ruse;
@@ -191,7 +188,7 @@ bool cmp(const char* s1, const char* s2)
     return true;
 }
 
-RESULT grading()
+int grading()
 {
     string problemPath = string("../") + "Problems/" + problemNumber + '/';
     int tc, limitSecond, limitMemoryMB;
@@ -206,16 +203,17 @@ RESULT grading()
     limitMemoryMB += 20; // 약 +15mb 오차
 
     long runningMillisecond = 0;
+    const double s1 = 1.0 / tc;
+    double s = 0;
     for (int i = 1; i <= tc; ++i)
     {
-        fputs((string("채점 중... ") + to_string((int) floor(100.0 * i / tc)) + "% \n").c_str(), fstdout);
-
+	fputs((string("채점 중... ") + to_string((int) floor(s1 * i * 100)) + "% \n").c_str(), fstdout);
         RESULT runningResult = running(problemPath, i, limitSecond, limitMemoryMB, &runningMillisecond);
-        // RESULT::NONE 이라는 것은 아무 문제 없이 실행은 되었다. 즉 답안지 채점만 하면 된다는 뜻.
-        if (runningResult != RESULT::NONE) return runningResult;
+        // RESULT::NONE = 답안지 채점만.
+        if (runningResult != RESULT::NONE) return (int) runningResult << 16;
         FILE* outF = fopen((problemPath + to_string(i) + ".out").c_str(), "r");
         FILE* userOutF = fopen((user_id + '/' + userOutFileName).c_str(), "r");
-        const int OUT_MAX = 32; // 출력 파일의 한 라인에 30자 넘으면 안됨
+        const int OUT_MAX = 64; // 출력 파일의 한 라인 최대 길이
         char out[OUT_MAX], userOut[OUT_MAX];
 	bool userEnd = false;
         RESULT gradingResult = RESULT::AC;
@@ -241,10 +239,19 @@ RESULT grading()
 	}
         fclose(outF);
         fclose(userOutF);
-        if (gradingResult != RESULT::AC) return RESULT::WA;
+        if (gradingResult != RESULT::AC) 
+	{
+	    s *= 100;
+	    // 고정 소수점 사용. 3옥텟 = 정수부, 4옥텟 = 소수부(둘째 자리에서 반올림)
+	    double t = floor(s * 10 + 0.5) / 10;
+	    int a = (int) t;
+	    int b = (t - a) * 10;
+	    return ((int) RESULT::WA << 16) + (a << 8) + b;
+	}
         fputs((string("실행 시간: ") + to_string(runningMillisecond) + "ms \n\n").c_str(), fstdout);
+	s += s1;
     }
-    return RESULT::AC;
+    return ((int) RESULT::AC << 16) + (100 << 8) + 0;
 }
 
 /*
@@ -265,13 +272,9 @@ argv[2] = file name(ex: test.cpp)
 argv[3] = problem number(ex: 1001)
 
 Main Exit Value
+    128 = AC, WA, TLE, MLE, RTE
     126 = 인자 오류
-    123 = 컴파일 에러
-      0 = AC
-      1 = WA
-      2 = TLE
-      3 = MLE
-      4 = RLE 
+    123 = 컴파일 에러 
  */
 int main(int argc, char* argv[])
 {
@@ -287,7 +290,7 @@ int main(int argc, char* argv[])
     problemNumber = argv[3];
     lang = (userFileName.back() == 'c' || userFileName.back() == 'C') ? LANG::C : LANG::CPP11;
 
-    fstdout = fopen(((user_id) + "/runStdout.out").c_str(), "w");
+    fstdout = fopen((user_id + "/runStdout.out").c_str(), "w");
 
     // Compile
     if (compile())
@@ -298,9 +301,9 @@ int main(int argc, char* argv[])
     else fputs("Compile Success \n\n", fstdout);
 
     // Grading
-    RESULT gradingResult = grading();
+    int gradingResult = grading();
     string resultS;
-    switch (gradingResult)
+    switch ((gradingResult & 0x00FF0000) >> 16)
     {
     case RESULT::AC:
         resultS = "맞았습니다.";
@@ -319,9 +322,14 @@ int main(int argc, char* argv[])
         break;
     }
     fputs(resultS.c_str(), fstdout);
+    fputs((string("\n점수: ") + to_string((gradingResult & 0x0000FF00) >> 8) + '.' + to_string(gradingResult & 0x000000FF) + '\n').c_str(), fstdout);
+
+    FILE* exitCodeFile = fopen((user_id + "/exitCode").c_str(), "w");
+    fputs(to_string(gradingResult).c_str(), exitCodeFile);
 
     // Destroy
     fclose(fstdout);
+    fclose(exitCodeFile);
 
-    return static_cast<int>(gradingResult);
+    return 128;
 }

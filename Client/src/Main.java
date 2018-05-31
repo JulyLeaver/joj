@@ -14,7 +14,6 @@ public class Main {
         final int PORT = 1851;
         try {
             Socket socket = new Socket(IP, PORT);
-            System.out.println("연결 성공");
 
             new Receiver(socket).start();
 

@@ -5,8 +5,8 @@ import java.util.Collections;
 
 /*
  * GRADING TABLE
- * USER_ID 		| P1000 | P1001 | P1002 | ...
- * <127.0.0.1	     Y	     N 	     N>
+ * USER_ID 		| P1000 | P1000S | P1001 | P1001S | P1002 | P1002S ...
+ * <127.0.0.1	     Y	   56.4       N 	   0       Y      100>
  *
  * STATUS TABLE
  * PROBLEM_ID   | SUBMIT_COUNT
@@ -71,7 +71,8 @@ public class DB {
         s.append("CREATE TABLE GRADING(");
         s.append("USER_ID VARCHAR2(15) NOT NULL UNIQUE, ");
         for (int i = 0; i < problemFolders.size(); ++i) {
-            s.append("P" + problemFolders.get(i) + " CHAR(1) DEFAULT 'N',");
+            s.append("P" + problemFolders.get(i) + " CHAR(1) DEFAULT 'N', " +
+                    "P" + problemFolders.get(i) + "S REAL DEFAULT 0,");
         }
         s.setCharAt(s.length() - 1, ')');
         executeUpdate(s.toString());
